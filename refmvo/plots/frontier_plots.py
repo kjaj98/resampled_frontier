@@ -93,6 +93,10 @@ def plot_weights_by_risk_stack(
     asset_names: Iterable[str],
     title: str = "Portfolio weights by risk",
     mask: Optional[np.ndarray] = None,
+    coverage: Optional[np.ndarray] = None,
+    coverage_threshold: float = 0.8,
+    low_alpha: float = 0.35,
+    low_hatch: str = "///",
 ) -> Figure:
     """Stacked bar chart of weights across the risk axis."""
     risks = np.asarray(risks, dtype=float)
@@ -106,6 +110,10 @@ def plot_weights_by_risk_stack(
     base_mask = np.isfinite(risks) & np.all(np.isfinite(weights), axis=1)
     if mask is not None:
         base_mask = base_mask & np.asarray(mask, dtype=bool)
+    if coverage is not None:
+        coverage = np.asarray(coverage, dtype=float)
+        if coverage.shape[0] != risks.shape[0]:
+            raise ValueError("coverage length must match risks length")
 
     fig, ax = plt.subplots()
     if not np.any(base_mask):
@@ -115,9 +123,14 @@ def plot_weights_by_risk_stack(
 
     x = risks[base_mask]
     W = weights[base_mask]
+    cov_masked = None
+    if coverage is not None:
+        cov_masked = coverage[base_mask]
     order = np.argsort(x)
     x = x[order]
     W = W[order]
+    if cov_masked is not None:
+        cov_masked = cov_masked[order]
 
     if len(x) > 1:
         diffs = np.diff(x)
@@ -132,7 +145,7 @@ def plot_weights_by_risk_stack(
     colors = plt.cm.tab20(np.linspace(0, 1, max(W.shape[1], 1)))
     bottom = np.zeros(len(x))
     for i in range(W.shape[1]):
-        ax.bar(
+        bars = ax.bar(
             x,
             W[:, i],
             bottom=bottom,
@@ -140,12 +153,34 @@ def plot_weights_by_risk_stack(
             color=colors[i % len(colors)],
             label=asset_names[i],
         )
+        if cov_masked is not None:
+            low_cov = cov_masked < coverage_threshold
+            for rect, is_low in zip(bars, low_cov):
+                if is_low:
+                    rect.set_alpha(low_alpha)
+                    rect.set_hatch(low_hatch)
         bottom += W[:, i]
 
     ax.set_title(title)
     ax.set_xlabel("Volatility (sigma)")
     ax.set_ylabel("Weight")
     ax.set_ylim(0, 1.0)
-    ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0))
+    legend_assets = ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0))
+    if cov_masked is not None:
+        from matplotlib.patches import Patch
+
+        cov_handles = [
+            Patch(facecolor="gray", edgecolor="gray", label=f"Coverage ≥ {coverage_threshold:.0%}"),
+            Patch(
+                facecolor="gray",
+                edgecolor="gray",
+                alpha=low_alpha,
+                hatch=low_hatch,
+                label=f"Coverage < {coverage_threshold:.0%}",
+            ),
+        ]
+        cov_legend = ax.legend(handles=cov_handles, loc="upper left")
+        ax.add_artist(legend_assets)
+        ax.add_artist(cov_legend)
     fig.tight_layout()
     return fig

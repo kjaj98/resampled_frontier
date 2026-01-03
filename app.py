@@ -312,10 +312,12 @@ def main():
         w_df = pd.DataFrame({"Asset": names, "ClassicEF": w_classic, "REF": w_ref})
         st.dataframe(w_df.set_index("Asset"))
 
+        dldir = settings.DownloadsPath or "data/outputs/"
+        os.makedirs(dldir, exist_ok=True)
+
         weights_mask = (
             np.isfinite(ref_sig)
             & np.all(np.isfinite(ref["W_bar"]), axis=1)
-            & (ref["coverage"] >= coverage_threshold)
         )
         fig_weights = plot_weights_by_risk_stack(
             ref_sig,
@@ -323,13 +325,17 @@ def main():
             names,
             title=f"Resampled weights by risk (coverage ≥ {coverage_threshold:.0%})",
             mask=weights_mask,
+            coverage=ref["coverage"],
+            coverage_threshold=coverage_threshold,
         )
         st.pyplot(fig_weights)
+        try:
+            fig_weights.savefig(os.path.join(dldir, "weights_by_risk.png"), dpi=200)
+        except Exception as e:
+            st.warning(f"Could not save weights-by-risk PNG: {e}", icon="⚠️")
         plt.close(fig_weights)
 
         # Save frontier CSVs
-        dldir = settings.DownloadsPath or "data/outputs/"
-        os.makedirs(dldir, exist_ok=True)
         front_df = pd.DataFrame({
             "target_return": targets,
             "coverage": ref["coverage"],
@@ -360,8 +366,21 @@ def main():
             "Coverage is the fraction of resampled worlds in which a portfolio meeting the "
             "target return (within tolerance) exists under your constraints."
         )
-        st.pyplot(plot_coverage(targets, ref["coverage"], coverage_threshold))
-        st.pyplot(plot_valid_counts(targets, ref["n_valid"]))
+        fig_cov = plot_coverage(targets, ref["coverage"], coverage_threshold)
+        st.pyplot(fig_cov)
+        try:
+            fig_cov.savefig(os.path.join(dldir, "coverage.png"), dpi=200)
+        except Exception as e:
+            st.warning(f"Could not save coverage PNG: {e}", icon="⚠️")
+        plt.close(fig_cov)
+
+        fig_counts = plot_valid_counts(targets, ref["n_valid"])
+        st.pyplot(fig_counts)
+        try:
+            fig_counts.savefig(os.path.join(dldir, "valid_counts.png"), dpi=200)
+        except Exception as e:
+            st.warning(f"Could not save valid-counts PNG: {e}", icon="⚠️")
+        plt.close(fig_counts)
 
         low_cov = ref["coverage"] < coverage_threshold
         if np.any(low_cov):
@@ -425,6 +444,10 @@ def main():
             ax_heat.set_title("Coverage heatmap")
             fig_heat.tight_layout()
             st.pyplot(fig_heat)
+            try:
+                fig_heat.savefig(os.path.join(dldir, "coverage_heatmap.png"), dpi=200)
+            except Exception as e:
+                st.warning(f"Could not save coverage heatmap PNG: {e}", icon="⚠️")
             plt.close(fig_heat)
 
     with tab4:
