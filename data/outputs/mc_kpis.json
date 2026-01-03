@@ -1,8 +1,8 @@
 {
-  "ruin_probability": 0.1402,
-  "median_terminal_wealth": 1252046.8158751528,
-  "p5_terminal": 0.0,
-  "p25_terminal": 406508.801572027,
-  "p75_terminal": 2613959.893363301,
-  "p95_terminal": 5838540.5713317515
+  "ruin_probability": 0.0,
+  "median_terminal_wealth": 221239937.4446476,
+  "p5_terminal": 89529106.67658544,
+  "p25_terminal": 152982917.1482411,
+  "p75_terminal": 323431309.23033756,
+  "p95_terminal": 515259085.1479658
 }

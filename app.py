@@ -309,6 +309,9 @@ def main():
         w_ref = ref["W_bar"][idx]
         if not np.all(np.isfinite(w_ref)):
             st.warning("Selected resampled point is invalid or below minimum coverage.", icon="⚠️")
+        sig_classic = ef_sig[idx] if np.isfinite(ef_sig[idx]) else float("nan")
+        sig_ref = ref_sig[idx] if np.isfinite(ref_sig[idx]) else float("nan")
+        st.subheader(f"Weights at selected target (σ classic={sig_classic:.4f}, σ ref={sig_ref:.4f})")
         w_df = pd.DataFrame({"Asset": names, "ClassicEF": w_classic, "REF": w_ref})
         st.dataframe(w_df.set_index("Asset"))
 
@@ -318,6 +321,14 @@ def main():
         weights_mask = (
             np.isfinite(ref_sig)
             & np.all(np.isfinite(ref["W_bar"]), axis=1)
+            & (ref["coverage"] >= coverage_threshold)
+        )
+        expected_weights = int(
+            np.sum(
+                (ef.get("ok_mask", np.ones(points_eff, dtype=bool)))
+                & (ref["coverage"] >= coverage_threshold)
+                & np.isfinite(ref_sig)
+            )
         )
         fig_weights = plot_weights_by_risk_stack(
             ref_sig,
@@ -327,6 +338,8 @@ def main():
             mask=weights_mask,
             coverage=ref["coverage"],
             coverage_threshold=coverage_threshold,
+            min_width=0.002,
+            expected_count=expected_weights,
         )
         st.pyplot(fig_weights)
         try:

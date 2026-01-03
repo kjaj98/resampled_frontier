@@ -95,8 +95,10 @@ def plot_weights_by_risk_stack(
     mask: Optional[np.ndarray] = None,
     coverage: Optional[np.ndarray] = None,
     coverage_threshold: float = 0.8,
-    low_alpha: float = 0.35,
+    low_alpha: float = 0.15,
     low_hatch: str = "///",
+    min_width: float = 0.002,
+    expected_count: Optional[int] = None,
 ) -> Figure:
     """Stacked bar chart of weights across the risk axis."""
     risks = np.asarray(risks, dtype=float)
@@ -114,6 +116,11 @@ def plot_weights_by_risk_stack(
         coverage = np.asarray(coverage, dtype=float)
         if coverage.shape[0] != risks.shape[0]:
             raise ValueError("coverage length must match risks length")
+
+    if expected_count is not None:
+        count = int(np.sum(base_mask))
+        if count != int(expected_count):
+            raise ValueError(f"weights_by_risk count {count} != expected {expected_count}")
 
     fig, ax = plt.subplots()
     if not np.any(base_mask):
@@ -141,8 +148,9 @@ def plot_weights_by_risk_stack(
             width = max(1e-4, float(x[0]) * 0.1)
     else:
         width = max(1e-4, float(x[0]) * 0.1)
+    width = max(float(min_width), width)
 
-    colors = plt.cm.tab20(np.linspace(0, 1, max(W.shape[1], 1)))
+    asset_colors = plt.cm.tab20(np.linspace(0, 1, max(W.shape[1], 1)))
     bottom = np.zeros(len(x))
     for i in range(W.shape[1]):
         bars = ax.bar(
@@ -150,7 +158,7 @@ def plot_weights_by_risk_stack(
             W[:, i],
             bottom=bottom,
             width=width,
-            color=colors[i % len(colors)],
+            color=asset_colors[i % len(asset_colors)],
             label=asset_names[i],
         )
         if cov_masked is not None:
@@ -165,22 +173,7 @@ def plot_weights_by_risk_stack(
     ax.set_xlabel("Volatility (sigma)")
     ax.set_ylabel("Weight")
     ax.set_ylim(0, 1.0)
-    legend_assets = ax.legend(loc="upper left", bbox_to_anchor=(1.02, 1.0))
-    if cov_masked is not None:
-        from matplotlib.patches import Patch
+    ax.legend(loc="upper left", frameon=True)
 
-        cov_handles = [
-            Patch(facecolor="gray", edgecolor="gray", label=f"Coverage ≥ {coverage_threshold:.0%}"),
-            Patch(
-                facecolor="gray",
-                edgecolor="gray",
-                alpha=low_alpha,
-                hatch=low_hatch,
-                label=f"Coverage < {coverage_threshold:.0%}",
-            ),
-        ]
-        cov_legend = ax.legend(handles=cov_handles, loc="upper left")
-        ax.add_artist(legend_assets)
-        ax.add_artist(cov_legend)
     fig.tight_layout()
     return fig

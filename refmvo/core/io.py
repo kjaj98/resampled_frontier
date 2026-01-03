@@ -236,6 +236,19 @@ def read_scenario_xlsx(path: str, autofill: bool = True) -> Dict[str, Any]:
     for col in ["Asset", "GeometricReturn", "Volatility", "MinWeight", "MaxWeight"]:
         if col not in assets.columns:
             raise ValueError(f"Assets sheet missing column: {col}")
+    corr = corr.apply(pd.to_numeric, errors="coerce")
+    if corr.isna().any().any():
+        bad = np.argwhere(corr.isna().values)
+        sample = []
+        for i, j in bad[:8]:
+            sample.append(f"({corr.index[i]}, {corr.columns[j]})")
+        more = "..." if len(bad) > 8 else ""
+        raise ValueError(
+            "Correlation contains non-numeric entries at: "
+            + ", ".join(sample)
+            + (f" {more}" if more else "")
+        )
+
     n = len(assets)
     if corr.shape != (n, n):
         raise ValueError(f"Correlation must be {n}x{n}, got {corr.shape}")
