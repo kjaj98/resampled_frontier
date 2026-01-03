@@ -121,7 +121,7 @@ def _cache_resampled(mu, S, bounds, targets, resamples, resample_years, frequenc
     )
 
 @cache_data(show_spinner=True)
-def _cache_mc(mu, S, w, mc_params_dict, rule_row_dict, inflation, downloads_dir):
+def _cache_mc(mu, S, w, mc_params_dict, rule_row_dict, inflation, downloads_dir, periods_per_year):
     mc_params = MonteCarloParams(**mc_params_dict)
     rule_row = pd.Series(rule_row_dict)
     return simulate_paths(
@@ -132,6 +132,7 @@ def _cache_mc(mu, S, w, mc_params_dict, rule_row_dict, inflation, downloads_dir)
         rule_row,
         float(inflation),
         str(downloads_dir),
+        int(periods_per_year),
     )
 
 def main():
@@ -506,6 +507,7 @@ def main():
                 rule_row.to_dict(),
                 mc_params.InflationRate,
                 settings.DownloadsPath,
+                periods,
             )
             st.success("Monte Carlo complete.", icon="✅")
 
@@ -609,7 +611,17 @@ def run_validation(xlsx_path: str, settings: Settings) -> bool:
     valid_idx = np.where(np.all(np.isfinite(ref["W_bar"]), axis=1))[0]
     assert len(valid_idx) > 0, "No valid resampled weights for Monte Carlo test"
     w0 = ref["W_bar"][valid_idx[len(valid_idx)//2]]
-    out = simulate_paths(mu, S, w0, mc_small, rule_row, mc_small.InflationRate, settings.DownloadsPath)
+    periods = PERIODS_PER_YEAR.get((settings.Frequency or "").strip().lower(), 1)
+    out = simulate_paths(
+        mu,
+        S,
+        w0,
+        mc_small,
+        rule_row,
+        mc_small.InflationRate,
+        settings.DownloadsPath,
+        periods,
+    )
     assert os.path.exists(os.path.join(settings.DownloadsPath, "wealth_quantiles_nominal.csv"))
     assert os.path.exists(os.path.join(settings.DownloadsPath, "wealth_quantiles_real.csv"))
     assert "median_terminal_wealth" in out["kpis"]

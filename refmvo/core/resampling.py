@@ -53,6 +53,8 @@ def resample_frontier_with_coverage(
     target_bands = None if target_bands is None else np.asarray(target_bands, dtype=float)
     n = len(mu_base)
     k = len(targets)
+    if target_bands is not None and target_bands.size != k:
+        raise ValueError("target_bands length must match targets length")
     periods = PERIODS_PER_YEAR.get((frequency or "").strip().lower(), 1)
     T = int(round(float(resample_years) * periods))
     T = max(T, 2)
@@ -70,7 +72,7 @@ def resample_frontier_with_coverage(
     else:
         cov_base = _ensure_psd(cov_base)
 
-    use_bands = target_bands is not None and target_bands.size == k
+    use_bands = target_bands is not None
     for b in range(resamples):
         if use_nonparam:
             X = _sample_nonparametric(rng, returns, T)

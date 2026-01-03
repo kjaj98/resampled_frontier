@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from refmvo.core.io import MonteCarloParams
-from refmvo.core.moments import portfolio_mapping_to_geometric
+from refmvo.core.moments import annualize_moments, portfolio_mapping_to_geometric
 from refmvo.plots.mc_plots import fan_chart_from_quantiles, histogram_with_kde
 
 
@@ -45,11 +45,17 @@ def simulate_paths(
     rule_row: pd.Series,
     inflation: float,
     downloads_dir: str,
+    periods_per_year: int = 1,
 ) -> Dict[str, object]:
     """Monte Carlo with lognormal portfolio returns and optional AR(1)."""
     mu = np.asarray(mu, dtype=float)
     cov = np.asarray(cov, dtype=float)
     w = np.asarray(w, dtype=float)
+    periods = int(periods_per_year)
+    if periods <= 0:
+        raise ValueError("periods_per_year must be a positive integer.")
+    if periods != 1:
+        mu, cov = annualize_moments(mu, cov, periods)
     T = int(params.HorizonYears)
     P = int(params.NumPaths)
     rng = np.random.default_rng(params.Seed)

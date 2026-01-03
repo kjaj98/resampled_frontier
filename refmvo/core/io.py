@@ -236,6 +236,35 @@ def read_scenario_xlsx(path: str, autofill: bool = True) -> Dict[str, Any]:
     for col in ["Asset", "GeometricReturn", "Volatility", "MinWeight", "MaxWeight"]:
         if col not in assets.columns:
             raise ValueError(f"Assets sheet missing column: {col}")
+    assets["Asset"] = assets["Asset"].astype(str)
+    dup_assets = assets["Asset"][assets["Asset"].duplicated()].unique().tolist()
+    if dup_assets:
+        raise ValueError(f"Duplicate asset names in Assets sheet: {dup_assets}")
+
+    names = assets["Asset"].tolist()
+    corr.index = corr.index.astype(str)
+    corr.columns = corr.columns.astype(str)
+    missing_rows = sorted(set(names) - set(corr.index))
+    missing_cols = sorted(set(names) - set(corr.columns))
+    extra_rows = sorted(set(corr.index) - set(names))
+    extra_cols = sorted(set(corr.columns) - set(names))
+    if missing_rows or missing_cols:
+        raise ValueError(
+            f"Correlation matrix missing assets. Rows missing: {missing_rows}; Cols missing: {missing_cols}"
+        )
+    if extra_rows or extra_cols:
+        raise ValueError(
+            f"Correlation matrix has extra assets. Rows extra: {extra_rows}; Cols extra: {extra_cols}"
+        )
+    corr = corr.loc[names, names]
+
+    assets["MinWeight"] = pd.to_numeric(assets["MinWeight"], errors="coerce")
+    assets["MaxWeight"] = pd.to_numeric(assets["MaxWeight"], errors="coerce")
+    bad_bounds = assets[["MinWeight", "MaxWeight"]].isna().any(axis=1)
+    if bad_bounds.any():
+        bad_names = assets.loc[bad_bounds, "Asset"].tolist()
+        raise ValueError(f"MinWeight/MaxWeight must be numeric for assets: {bad_names}")
+
     corr = corr.apply(pd.to_numeric, errors="coerce")
     if corr.isna().any().any():
         bad = np.argwhere(corr.isna().values)

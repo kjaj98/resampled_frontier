@@ -58,10 +58,32 @@ def portfolio_mapping_to_geometric(m_p: float, s_p: float) -> float:
     return A / np.sqrt(y) - 1.0
 
 
+def annualize_moments(
+    mu: np.ndarray,
+    cov: np.ndarray,
+    periods_per_year: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Annualize per-period arithmetic moments assuming i.i.d. lognormal returns."""
+    mu = np.asarray(mu, dtype=float)
+    cov = np.asarray(cov, dtype=float)
+    p = int(periods_per_year)
+    if p <= 1:
+        return mu, cov
+
+    vols = np.sqrt(np.maximum(np.diag(cov), 0.0))
+    g = np.array([portfolio_mapping_to_geometric(mu[i], vols[i]) for i in range(len(mu))], dtype=float)
+    g_ann = (1.0 + g) ** p - 1.0
+    vols_ann = vols * np.sqrt(p)
+    mu_ann = geometric_to_arithmetic(g_ann, vols_ann)
+    cov_ann = cov * p
+    return mu_ann, cov_ann
+
+
 __all__ = [
     "nearest_psd",
     "build_covariance",
     "shrink_cov_from_samples",
     "geometric_to_arithmetic",
     "portfolio_mapping_to_geometric",
+    "annualize_moments",
 ]

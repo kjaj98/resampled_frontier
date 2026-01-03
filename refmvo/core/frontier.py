@@ -72,13 +72,15 @@ def efficient_frontier(
     target_bands = None if target_bands is None else np.asarray(target_bands, dtype=float)
     n = len(mu)
     k = len(targets)
+    if target_bands is not None and target_bands.size != k:
+        raise ValueError("target_bands length must match targets length")
     W = np.full((k, n), np.nan)
     rets = np.full(k, np.nan)
     risks = np.full(k, np.nan)
     ok_mask = np.zeros(k, dtype=bool)
     statuses = []
     solver_names = []
-    use_bands = target_bands is not None and target_bands.size == k
+    use_bands = target_bands is not None
 
     for i, R in enumerate(targets):
         if use_bands:

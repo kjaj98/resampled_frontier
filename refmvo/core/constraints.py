@@ -26,6 +26,8 @@ def normalize_bounds(
     bounds = np.asarray(asset_bounds, dtype=float)
     if bounds.ndim != 2 or bounds.shape[1] != 2:
         raise ValueError("asset_bounds must be an (N,2) array")
+    if not np.all(np.isfinite(bounds)):
+        raise ValueError("asset_bounds must be finite")
 
     lb = bounds[:, 0].copy()
     ub = bounds[:, 1].copy()
