@@ -10,3 +10,4 @@ pydantic
 openpyxl
 pytest
 watchdog
+altair
