@@ -538,7 +538,7 @@ def run_validation(xlsx_path: str, settings: Settings) -> bool:
 
     assert set(["Assets","Correlation","Settings","MonteCarlo","SpendingRules"]).issubset(
         set(pd.ExcelFile(xlsx_path, engine="openpyxl").sheet_names)), "Missing sheets"
-    assert assets.shape[0] == corr.shape[0] == 6, "Expected 6 assets"
+    assert assets.shape[0] == corr.shape[0], "Assets / Correlation size mismatch"
     # PSD check
     ev = eigh(corr.values, eigvals_only=True)
     assert np.min(ev) > -1e-6, "Correlation not PSD"
