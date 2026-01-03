@@ -63,6 +63,7 @@ class MonteCarloParams(BaseModel):
     NumPaths: int = 10000
     StartWealth: float = 1_000_000.0
     InflationRate: float = 0.02
+    WithdrawalTaxRate: float = 0.24
     StartSpendingYear: int = 0
     UseRealTerms: str = "Both"  # Real|Nominal|Both
     RebalanceFrequency: str = "Annual"
@@ -153,6 +154,7 @@ def write_sample_workbook(path: str) -> None:
                 "NumPaths",
                 "StartWealth",
                 "InflationRate",
+                "WithdrawalTaxRate",
                 "StartSpendingYear",
                 "UseRealTerms",
                 "RebalanceFrequency",
@@ -164,7 +166,7 @@ def write_sample_workbook(path: str) -> None:
                 "TxnCostBps",
                 "Seed",
             ],
-            "Value": [30, 10000, 1000000, 0.02, 0, "Both", "Annual", "LogNormal", "False", 0.15, 0, 0, 0, 123],
+            "Value": [30, 10000, 1000000, 0.02, 0.24, 0, "Both", "Annual", "LogNormal", "False", 0.15, 0, 0, 0, 123],
         }
     )
 

@@ -59,6 +59,9 @@ def simulate_paths(
 
     drift_stress = params.DriftStressBps / 10_000.0
     mgmt_drag = params.MgmtFeeBps / 10_000.0
+    tax_rate = float(getattr(params, "WithdrawalTaxRate", 0.0))
+    if tax_rate < 0.0 or tax_rate >= 1.0:
+        raise ValueError("WithdrawalTaxRate must be in [0, 1).")
 
     mu_p_net = mu_p - drift_stress - mgmt_drag
     if mu_p_net <= -1.0:
@@ -127,10 +130,15 @@ def simulate_paths(
             else:
                 raise ValueError(f"Unknown spending rule: {rule}")
 
-        S_nom = np.minimum(S_nom, wealth[:, t])
-        spend[:, t] = S_nom
+        max_net = wealth[:, t] * (1.0 - tax_rate)
+        S_net = np.minimum(S_nom, max_net)
+        spend[:, t] = S_net
 
-        wealth_after = wealth[:, t] - S_nom
+        if tax_rate > 0.0:
+            S_gross = S_net / (1.0 - tax_rate)
+        else:
+            S_gross = S_net
+        wealth_after = wealth[:, t] - S_gross
         gross = np.exp(log_r[:, t])
         wealth[:, t + 1] = np.maximum(0.0, wealth_after * gross)
 

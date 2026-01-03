@@ -467,6 +467,14 @@ def main():
         mc_params.HorizonYears = st.slider("Horizon (years)", 5, 60, mc_params.HorizonYears, step=1)
         mc_params.NumPaths = st.slider("Number of paths", 500, 20000, mc_params.NumPaths, step=500)
         mc_params.InflationRate = st.number_input("Inflation rate", value=float(mc_params.InflationRate), step=0.005, format="%.3f")
+        mc_params.WithdrawalTaxRate = st.number_input(
+            "Withdrawal tax rate",
+            min_value=0.0,
+            max_value=0.95,
+            value=float(getattr(mc_params, "WithdrawalTaxRate", 0.24)),
+            step=0.01,
+            format="%.3f",
+        )
         mc_params.ReturnDistribution = "LogNormal"
         st.caption("Return distribution: LogNormal (log-returns, non-negative wealth).")
         mc_params.SerialCorrelation = st.checkbox("AR(1) serial correlation at portfolio level", value=mc_params.SerialCorrelation)

@@ -114,6 +114,7 @@ The app defaults to reading from `data/inputs/sample_scenario.xlsx`. It must con
 | NumPaths           | 10000   |
 | StartWealth        | 1000000 |
 | InflationRate      | 0.02    |
+| WithdrawalTaxRate  | 0.24    |
 | StartSpendingYear  | 0       |
 | UseRealTerms       | Both    |
 | RebalanceFrequency | Annual  |
@@ -154,6 +155,7 @@ The app defaults to reading from `data/inputs/sample_scenario.xlsx`. It must con
 - `NumPaths`: number of Monte Carlo paths.
 - `StartWealth`: initial wealth level.
 - `InflationRate`: used to compute real wealth series.
+- `WithdrawalTaxRate`: gross‑up rate for withdrawals (net spend = gross × (1 − tax)).
 - `StartSpendingYear`: when spending begins.
 - `UseRealTerms`: retained for compatibility (outputs include both nominal and real).
 - `RebalanceFrequency`: retained for compatibility; not used (annual rebalance assumed).
@@ -256,6 +258,8 @@ Key implementation notes:
 - `ReturnDistribution` is fixed to `LogNormal`; other values are ignored.
 - Log-return parameters are derived from the portfolio arithmetic mean and volatility
   to preserve the geometric mean implied by the inputs.
+- Withdrawals are **grossed for tax**: the model spends the net amount and deducts
+  the gross amount at the **start of each year** (end of prior year).
 - Optional AR(1) **serial correlation** at the **portfolio** level (applied to log returns)
 - 4 spending rules: ConstantReal, PercentOfPortfolio, EndowmentHybrid, Guardrails
 - Rebalancing (annual), management & transaction costs
@@ -276,7 +280,7 @@ Validation runs **automatically on first load** to check:
 - `frontiers.csv`: target grid, classic/ref metrics, coverage
 - `ref_weights.csv`: resampled weights by target
 - `wealth_quantiles_nominal.csv`, `wealth_quantiles_real.csv`
-- `spend_quantiles_nominal.csv`
+- `spend_quantiles_nominal.csv` (net spending)
 - `frontier.png`, `fan_nominal.png`, `fan_real.png`
 - `terminal_wealth_hist.png`, `terminal_spending_hist.png`
 - `mc_kpis.json`
