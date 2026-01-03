@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+scipy
+matplotlib
+cvxpy
+scikit-learn
+numba
+pydantic
+openpyxl
+pytest
+watchdog
